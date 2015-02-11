@@ -6,18 +6,12 @@ import (
 )
 
 type Domain struct {
-	// unique identification of domain
-	Id int `json:"id,omitempty"`
-	// id of assigned bundle
-	Bundle string `json:"bundle"`
-	// whether the domain uses http or https
-	Name string `json:"name"`
-	// name of domain (usually DNS name)
-	Scheme string `json:"scheme"`
-	// starting point for the domain deep scan
-	DeepScan string `json:"deepScan"`
-	// landing pages of the domain scanned
-	FastScans []string `json:"fastScans"`
+	Id        int      `json:"id,omitempty"` // unique identification of domain
+	Bundle    string   `json:"bundle"`       // id of assigned bundle
+	Name      string   `json:"name"`         // name of domain (usually DNS name)
+	Scheme    string   `json:"scheme"`       // whether the domain uses http or https
+	DeepScan  string   `json:"deepScan"`     // starting point for the domain deep scan
+	FastScans []string `json:"fastScans"`    // landing pages of the domain scanned
 }
 
 func (a *API) CreateDomain(domain *Domain) (*Domain, error) {
