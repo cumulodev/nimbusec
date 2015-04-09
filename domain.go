@@ -77,7 +77,7 @@ func (a *API) FindDomains(filter string) ([]Domain, error) {
 	return body, nil
 }
 
-func (a *API) DeleteDomain(d Domain, clean bool) error {
+func (a *API) DeleteDomain(d *Domain, clean bool) error {
 	url := a.geturl("/v2/domain/%d", d.Id)
 	_, err := a.client.Delete(url, map[string]string{
 		"pleaseremovealldata": fmt.Sprintf("%t", clean),
