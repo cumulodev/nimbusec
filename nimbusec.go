@@ -1,23 +1,30 @@
 package nimbusec
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/cumulodev/oauth"
 )
 
 const (
-	EMPTY_FILTER = ""
-	DEFAULT_API  = "https://api.nimbusec.com/"
+	// EmptyFilter is a filter that matches all fields.
+	EmptyFilter = ""
+
+	// DefaultAPI is the default endpoint of the nimbusec API.
+	DefaultAPI = "https://api.nimbusec.com/"
 )
 
+// API represents a client to the nimbusec API.
 type API struct {
 	url    *url.URL
 	client *oauth.Consumer
 	token  *oauth.AccessToken
 }
 
+// NewAPI creates a new nimbusec API client.
 func NewAPI(rawurl, key, secret string) (*API, error) {
 	client := oauth.NewConsumer(key, secret, oauth.ServiceProvider{})
 	token := &oauth.AccessToken{}
@@ -34,10 +41,30 @@ func NewAPI(rawurl, key, secret string) (*API, error) {
 	}, nil
 }
 
+// geturl builds the fully qualified url to the nimbusec API.
 func (a *API) geturl(relpath string, args ...interface{}) string {
 	if url, err := a.url.Parse(fmt.Sprintf(relpath, args...)); err == nil {
 		return url.String()
 	}
 
 	return ""
+}
+
+// try is used to encapsulate a HTTP operation and retrieve the optional
+// nimbusec error if one happened.
+func try(resp *http.Response, err error) (*http.Response, error) {
+	if resp == nil {
+		return resp, err
+	}
+
+	if resp.StatusCode < 300 {
+		return resp, err
+	}
+
+	msg := resp.Header.Get("x-nimbusec-error")
+	if msg != "" {
+		return resp, errors.New(msg)
+	}
+
+	return resp, err
 }

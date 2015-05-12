@@ -2,6 +2,7 @@ package nimbusec
 
 import "encoding/json"
 
+// Result represents a finding of the nimbusec service that requires user action.
 type Result struct {
 	Id           int     `json:"id,omitempty`  // unique identification of a result
 	Status       string  `json:"status"`       // status of the result (pending, acknowledged, falsepositive, removed)
@@ -27,6 +28,7 @@ type Result struct {
 	Reason     string `json:"reason"`     // reason why a domain/URL is blacklisted
 }
 
+// GetResult fetches a result by its ID.
 func (a *API) GetResult(domain, result int) (*Result, error) {
 	param := make(map[string]string)
 	url := a.geturl("/v2/domain/%d/result/%d", domain, result)
@@ -45,9 +47,10 @@ func (a *API) GetResult(domain, result int) (*Result, error) {
 	return body, nil
 }
 
+// FindResults searches for results that match the given filter criteria.
 func (a *API) FindResults(domain int, filter string) ([]Result, error) {
 	param := make(map[string]string)
-	if filter != EMPTY_FILTER {
+	if filter != EmptyFilter {
 		param["q"] = filter
 	}
 

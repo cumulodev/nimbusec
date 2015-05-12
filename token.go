@@ -2,6 +2,7 @@ package nimbusec
 
 import "encoding/json"
 
+// Token represents the credentials of an API or agent for the nimbusec API.
 type Token struct {
 	Id       int    `json:"id"`       // unique identification of a token
 	Name     string `json:"name"`     // given name for a token
@@ -11,6 +12,7 @@ type Token struct {
 	Version  int    `json:"version"`  // last agent version that was seen for this key
 }
 
+// CreateToken issues the nimbusec API to create a new agent token.
 func (a *API) CreateToken(token *Token) (*Token, error) {
 	payload, err := json.Marshal(token)
 	if err != nil {
@@ -34,6 +36,7 @@ func (a *API) CreateToken(token *Token) (*Token, error) {
 	return body, nil
 }
 
+// GetToken fetches a token by its ID.
 func (a *API) GetToken(token int) (*Token, error) {
 	param := make(map[string]string)
 	url := a.geturl("/v2/agent/token/%d", token)
@@ -52,9 +55,10 @@ func (a *API) GetToken(token int) (*Token, error) {
 	return body, nil
 }
 
+// FindTOkens searches for tokens that match the given filter criteria.
 func (a *API) FindTokens(filter string) ([]Token, error) {
 	param := make(map[string]string)
-	if filter != EMPTY_FILTER {
+	if filter != EmptyFilter {
 		param["q"] = filter
 	}
 
