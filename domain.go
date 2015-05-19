@@ -1,9 +1,6 @@
 package nimbusec
 
-import (
-	"encoding/json"
-	"fmt"
-)
+import "fmt"
 
 // Domain represents a nimbusec monitored domain.
 type Domain struct {
@@ -17,68 +14,77 @@ type Domain struct {
 
 // CreateDomain issues the API to create the given domain.
 func (a *API) CreateDomain(domain *Domain) (*Domain, error) {
-	payload, err := json.Marshal(domain)
-	if err != nil {
-		return nil, err
-	}
-
-	param := make(map[string]string)
+	dst := new(Domain)
 	url := a.geturl("/v2/domain")
-	resp, err := try(a.client.Post(url, "application/json", string(payload), param, a.token))
-	if err != nil {
-		return nil, err
-	}
+	err := a.post(url, params{}, domain, dst)
+	return dst, err
+}
 
-	body := new(Domain)
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&body)
-	if err != nil {
-		return nil, err
-	}
+// CreateOrUpdateDomain issues the nimbusec API to create the given domain. Instead
+// of failing when attempting to create a duplicate domain, this method will update
+// the remote domain instead.
+func (a *API) CreateOrUpdateDomain(domain *Domain) (*Domain, error) {
+	dst := new(Domain)
+	url := a.geturl("/v2/domain")
+	err := a.post(url, params{"upsert": "true"}, domain, dst)
+	return dst, err
+}
 
-	return body, nil
+// CreateOrGetDomain issues the nimbusec API to create the given domain. Instead
+// of failing when attempting to create a duplicate domain, this method will fetch
+// the remote domain instead.
+func (a *API) CreateOrGetDomain(domain *Domain) (*Domain, error) {
+	dst := new(Domain)
+	url := a.geturl("/v2/domain")
+	err := a.post(url, params{"upsert": "false"}, domain, dst)
+	return dst, err
 }
 
 // GetDomain retrieves a domain from the API by its ID.
 func (a *API) GetDomain(domain int) (*Domain, error) {
-	param := make(map[string]string)
+	dst := new(Domain)
 	url := a.geturl("/v2/domain/%d", domain)
-	resp, err := a.client.Get(url, param, a.token)
+	err := a.get(url, params{}, dst)
+	return dst, err
+}
+
+// GetDomainByName fetches an domain by its name.
+func (a *API) GetDomainByName(name string) (*Domain, error) {
+	domains, err := a.FindDomains(fmt.Sprintf("name eq \"%s\"", name))
 	if err != nil {
 		return nil, err
 	}
 
-	body := new(Domain)
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&body)
-	if err != nil {
-		return nil, err
+	if len(domains) == 0 {
+		return nil, fmt.Errorf("name %q did not match any domains", name)
 	}
 
-	return body, nil
+	if len(domains) > 1 {
+		return nil, fmt.Errorf("name %q matched too many domains. please contact nimbusec.", name)
+	}
+
+	return &domains[0], nil
 }
 
 // FindDomains searches for domains that match the given filter criteria.
 func (a *API) FindDomains(filter string) ([]Domain, error) {
-	param := make(map[string]string)
+	params := params{}
 	if filter != EmptyFilter {
-		param["q"] = filter
+		params["q"] = filter
 	}
 
+	dst := make([]Domain, 0)
 	url := a.geturl("/v2/domain")
-	resp, err := try(a.client.Get(url, param, a.token))
-	if err != nil {
-		return nil, err
-	}
+	err := a.get(url, params, dst)
+	return dst, err
+}
 
-	body := make([]Domain, 0)
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body, nil
+// UpdateDOmain issues the nimbusec API to update a domain.
+func (a *API) UpdateDomain(domain *Domain) (*Domain, error) {
+	dst := new(Domain)
+	url := a.geturl("/v2/domain/%d", domain.Id)
+	err := a.put(url, params{}, domain, dst)
+	return dst, err
 }
 
 // DeleteDomain issues the API to delete a domain. When clean=false, the domain and
@@ -86,32 +92,21 @@ func (a *API) FindDomains(filter string) ([]Domain, error) {
 // will also be removed from the nimbusec system.
 func (a *API) DeleteDomain(d *Domain, clean bool) error {
 	url := a.geturl("/v2/domain/%d", d.Id)
-	_, err := a.client.Delete(url, map[string]string{
+	return a.delete(url, params{
 		"pleaseremovealldata": fmt.Sprintf("%t", clean),
-	}, a.token)
-	return err
+	})
 }
 
 // FindInfected searches for domains that have pending Results that match the
 // given filter criteria.
 func (a *API) FindInfected(filter string) ([]Domain, error) {
-	param := make(map[string]string)
+	params := make(map[string]string)
 	if filter != EmptyFilter {
-		param["q"] = filter
+		params["q"] = filter
 	}
 
+	dst := make([]Domain, 0)
 	url := a.geturl("/v2/infected")
-	resp, err := a.client.Get(url, param, a.token)
-	if err != nil {
-		return nil, err
-	}
-
-	body := make([]Domain, 0)
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body, nil
+	err := a.get(url, params, dst)
+	return dst, err
 }

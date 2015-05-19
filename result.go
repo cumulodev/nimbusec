@@ -1,7 +1,5 @@
 package nimbusec
 
-import "encoding/json"
-
 // Result represents a finding of the nimbusec service that requires user action.
 type Result struct {
 	Id           int     `json:"id,omitempty`  // unique identification of a result
@@ -30,42 +28,21 @@ type Result struct {
 
 // GetResult fetches a result by its ID.
 func (a *API) GetResult(domain, result int) (*Result, error) {
-	param := make(map[string]string)
+	dst := new(Result)
 	url := a.geturl("/v2/domain/%d/result/%d", domain, result)
-	resp, err := a.client.Get(url, param, a.token)
-	if err != nil {
-		return nil, err
-	}
-
-	body := new(Result)
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body, nil
+	err := a.get(url, params{}, dst)
+	return dst, err
 }
 
 // FindResults searches for results that match the given filter criteria.
 func (a *API) FindResults(domain int, filter string) ([]Result, error) {
-	param := make(map[string]string)
+	params := make(map[string]string)
 	if filter != EmptyFilter {
-		param["q"] = filter
+		params["q"] = filter
 	}
 
+	dst := make([]Result, 0)
 	url := a.geturl("/v2/domain/%d/result", domain)
-	resp, err := a.client.Get(url, param, a.token)
-	if err != nil {
-		return nil, err
-	}
-
-	body := make([]Result, 0)
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body, nil
+	err := a.get(url, params, dst)
+	return dst, err
 }

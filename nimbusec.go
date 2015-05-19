@@ -1,6 +1,7 @@
 package nimbusec
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -67,4 +68,91 @@ func try(resp *http.Response, err error) (*http.Response, error) {
 	}
 
 	return resp, err
+}
+
+type params map[string]string
+
+func (a *API) post(url string, params params, src interface{}, dst interface{}) error {
+	payload, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+
+	resp, err := try(a.client.Post(url, "application/json", string(payload), params, a.token))
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	// no destination, so caller was only interested in the
+	// side effects.
+	if dst == nil {
+		return nil
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&dst)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *API) get(url string, params params, dst interface{}) error {
+	resp, err := try(a.client.Get(url, params, a.token))
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	// no destination, so caller was only interested in the
+	// side effects.
+	if dst == nil {
+		return nil
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&dst)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *API) put(url string, params params, src interface{}, dst interface{}) error {
+	payload, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+
+	resp, err := try(a.client.Put(url, "application/json", string(payload), params, a.token))
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	// no destination, so caller was only interested in the
+	// side effects.
+	if dst == nil {
+		return nil
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&dst)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *API) delete(url string, params params) error {
+	resp, err := a.client.Delete(url, params, a.token)
+	resp.Body.Close()
+	return err
 }

@@ -1,7 +1,5 @@
 package nimbusec
 
-import "encoding/json"
-
 // Token represents the credentials of an API or agent for the nimbusec API.
 type Token struct {
 	Id       int    `json:"id"`       // unique identification of a token
@@ -14,66 +12,29 @@ type Token struct {
 
 // CreateToken issues the nimbusec API to create a new agent token.
 func (a *API) CreateToken(token *Token) (*Token, error) {
-	payload, err := json.Marshal(token)
-	if err != nil {
-		return nil, err
-	}
-
-	param := make(map[string]string)
+	dst := new(Token)
 	url := a.geturl("/v2/agent/token")
-	resp, err := a.client.Post(url, "application/json", string(payload), param, a.token)
-	if err != nil {
-		return nil, err
-	}
-
-	body := new(Token)
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body, nil
+	err := a.post(url, params{}, token, dst)
+	return dst, err
 }
 
 // GetToken fetches a token by its ID.
 func (a *API) GetToken(token int) (*Token, error) {
-	param := make(map[string]string)
+	dst := new(Token)
 	url := a.geturl("/v2/agent/token/%d", token)
-	resp, err := a.client.Get(url, param, a.token)
-	if err != nil {
-		return nil, err
-	}
-
-	body := new(Token)
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body, nil
+	err := a.get(url, params{}, dst)
+	return dst, err
 }
 
 // FindTOkens searches for tokens that match the given filter criteria.
 func (a *API) FindTokens(filter string) ([]Token, error) {
-	param := make(map[string]string)
+	params := params{}
 	if filter != EmptyFilter {
-		param["q"] = filter
+		params["q"] = filter
 	}
 
+	dst := make([]Token, 0)
 	url := a.geturl("/v2/agent/token")
-	resp, err := a.client.Get(url, param, a.token)
-	if err != nil {
-		return nil, err
-	}
-
-	body := make([]Token, 0)
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body, nil
+	err := a.get(url, params, dst)
+	return dst, err
 }

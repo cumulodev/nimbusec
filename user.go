@@ -1,9 +1,6 @@
 package nimbusec
 
-import (
-	"encoding/json"
-	"fmt"
-)
+import "fmt"
 
 const (
 	// RoleUser is the restricted role for an user
@@ -30,100 +27,104 @@ type User struct {
 
 // CreateUser issues the nimbusec API to create the given user.
 func (a *API) CreateUser(user *User) (*User, error) {
-	payload, err := json.Marshal(user)
-	if err != nil {
-		return nil, err
-	}
-
-	param := make(map[string]string)
+	dst := new(User)
 	url := a.geturl("/v2/user")
-	resp, err := try(a.client.Post(url, "application/json", string(payload), param, a.token))
-	if err != nil {
-		fmt.Printf("resp: %+v\n", resp)
-		return nil, err
-	}
+	err := a.post(url, params{}, user, dst)
+	return dst, err
+}
 
-	body := new(User)
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&body)
-	if err != nil {
-		return nil, err
-	}
+// CreateOrUpdateUser issues the nimbusec API to create the given user. Instead of
+// failing when attempting to create a duplicate user, this method will update the
+// remote user instead.
+func (a *API) CreateOrUpdateUser(user *User) (*User, error) {
+	dst := new(User)
+	url := a.geturl("/v2/user")
+	err := a.post(url, params{"upsert": "true"}, user, dst)
+	return dst, err
+}
 
-	return body, nil
+// CreateOrGetUser issues the nimbusec API to create the given user. Instead of
+// failing when attempting to create a duplicate user, this method will fetch the
+// remote user instead.
+func (a *API) CreateOrGetUser(user *User) (*User, error) {
+	dst := new(User)
+	url := a.geturl("/v2/user")
+	err := a.post(url, params{"upsert": "false"}, user, dst)
+	return dst, err
 }
 
 // GetUser fetches an user by its ID.
 func (a *API) GetUser(user int) (*User, error) {
-	param := make(map[string]string)
+	dst := new(User)
 	url := a.geturl("/v2/user/%d", user)
-	resp, err := a.client.Get(url, param, a.token)
+	err := a.get(url, params{}, dst)
+	return dst, err
+}
+
+// GetUserByLogin fetches an user by its login name.
+func (a *API) GetUserByLogin(login string) (*User, error) {
+	users, err := a.FindUsers(fmt.Sprintf("login eq \"%s\"", login))
 	if err != nil {
 		return nil, err
 	}
 
-	body := new(User)
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&body)
-	if err != nil {
-		return nil, err
+	if len(users) == 0 {
+		return nil, fmt.Errorf("login %q did not match any users", login)
 	}
 
-	return body, nil
+	if len(users) > 1 {
+		return nil, fmt.Errorf("login %q matched too many users. please contact nimbusec.", login)
+	}
+
+	return &users[0], nil
 }
 
 // FindUsers searches for users that match the given filter criteria.
 func (a *API) FindUsers(filter string) ([]User, error) {
-	param := make(map[string]string)
+	params := params{}
 	if filter != EmptyFilter {
-		param["q"] = filter
+		params["q"] = filter
 	}
 
+	dst := make([]User, 0)
 	url := a.geturl("/v2/user")
-	resp, err := try(a.client.Get(url, param, a.token))
-	if err != nil {
-		return nil, err
-	}
+	err := a.get(url, params, dst)
+	return dst, err
+}
 
-	body := make([]User, 0)
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body, nil
+// UpdateUser issues the nimbusec API to update an user.
+func (a *API) UpdateUser(user *User) (*User, error) {
+	dst := new(User)
+	url := a.geturl("/v2/user/%d", user.Id)
+	err := a.put(url, params{}, user, dst)
+	return dst, err
 }
 
 // DeleteUser issues the nimbusec API to delete an user. The root user or tennant
 // can not be deleted via this method.
 func (a *API) DeleteUser(user *User) error {
-	param := make(map[string]string)
 	url := a.geturl("/v2/user/%d", user.Id)
-	_, err := a.client.Delete(url, param, a.token)
-	return err
+	return a.delete(url, params{})
 }
 
 // UpdateDomainSet updates the set of allowed domains of an restricted user.
 func (a *API) UpdateDomainSet(user *User, domains []int) ([]int, error) {
-	payload, err := json.Marshal(domains)
-	if err != nil {
-		return []int{}, err
-	}
-
-	param := make(map[string]string)
+	dst := make([]int, 0)
 	url := a.geturl("/v2/user/%d/domains", user.Id)
-	resp, err := a.client.Put(url, "application/json", string(payload), param, a.token)
-	if err != nil {
-		return []int{}, err
-	}
+	err := a.put(url, params{}, domains, dst)
+	return dst, err
+}
 
-	body := make([]int, 0)
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&body)
-	if err != nil {
-		return []int{}, err
-	}
+// LinkDomain links the given domain id to the given user and adds the priviledges for
+// the user to view the domain.
+func (a *API) LinkDomain(user *User, domain int) error {
+	url := a.geturl("/v2/user/%d/domains", user.Id)
+	return a.post(url, params{}, domain, nil)
+}
 
-	return body, nil
+// UnlinkDomain unlinks the given domain id to the given user and removes the priviledges
+// from the user to view the domain.
+func (a *API) UnlinkDomain(user *User, domain int) error {
+	url := a.geturl("/v2/user/%d/domains/%d", user.Id, domain)
+	return a.delete(url, params{})
 }
