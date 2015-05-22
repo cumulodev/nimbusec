@@ -88,7 +88,7 @@ func (a *API) FindUsers(filter string) ([]User, error) {
 
 	dst := make([]User, 0)
 	url := a.geturl("/v2/user")
-	err := a.get(url, params, dst)
+	err := a.get(url, params, &dst)
 	return dst, err
 }
 
@@ -111,7 +111,7 @@ func (a *API) DeleteUser(user *User) error {
 func (a *API) UpdateDomainSet(user *User, domains []int) ([]int, error) {
 	dst := make([]int, 0)
 	url := a.geturl("/v2/user/%d/domains", user.Id)
-	err := a.put(url, params{}, domains, dst)
+	err := a.put(url, params{}, domains, &dst)
 	return dst, err
 }
 

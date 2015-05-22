@@ -75,7 +75,7 @@ func (a *API) FindDomains(filter string) ([]Domain, error) {
 
 	dst := make([]Domain, 0)
 	url := a.geturl("/v2/domain")
-	err := a.get(url, params, dst)
+	err := a.get(url, params, &dst)
 	return dst, err
 }
 
@@ -107,6 +107,6 @@ func (a *API) FindInfected(filter string) ([]Domain, error) {
 
 	dst := make([]Domain, 0)
 	url := a.geturl("/v2/infected")
-	err := a.get(url, params, dst)
+	err := a.get(url, params, &dst)
 	return dst, err
 }

@@ -35,6 +35,6 @@ func (a *API) FindTokens(filter string) ([]Token, error) {
 
 	dst := make([]Token, 0)
 	url := a.geturl("/v2/agent/token")
-	err := a.get(url, params, dst)
+	err := a.get(url, params, &dst)
 	return dst, err
 }

@@ -43,6 +43,6 @@ func (a *API) FindResults(domain int, filter string) ([]Result, error) {
 
 	dst := make([]Result, 0)
 	url := a.geturl("/v2/domain/%d/result", domain)
-	err := a.get(url, params, dst)
+	err := a.get(url, params, &dst)
 	return dst, err
 }
