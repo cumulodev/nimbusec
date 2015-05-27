@@ -1,15 +1,48 @@
 package nimbusec
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"time"
+)
 
 // Domain represents a nimbusec monitored domain.
 type Domain struct {
-	Id        int      `json:"id,omitempty"` // unique identification of domain
-	Bundle    string   `json:"bundle"`       // id of assigned bundle
-	Name      string   `json:"name"`         // name of domain (usually DNS name)
-	Scheme    string   `json:"scheme"`       // whether the domain uses http or https
-	DeepScan  string   `json:"deepScan"`     // starting point for the domain deep scan
-	FastScans []string `json:"fastScans"`    // landing pages of the domain scanned
+	Id        int      `json:"id,omitempty"` // Unique identification of domain
+	Bundle    string   `json:"bundle"`       // ID of assigned bundle
+	Name      string   `json:"name"`         // Name of domain (usually DNS name)
+	Scheme    string   `json:"scheme"`       // Flag whether the domain uses http or https
+	DeepScan  string   `json:"deepScan"`     // Starting point for the domain deep scan
+	FastScans []string `json:"fastScans"`    // Landing pages of the domain scanned
+}
+
+// DomainBilling represents a billing change event. These happen for example when
+// the bundle for a domain changes, or the domain get's disabled or activated.
+type DomainBilling struct {
+	Time   Timestamp `json:"timestamp"` // Time when the change happend.
+	Action string    `json:"action"`    // Type of change, can be either `link` or `unlink`.
+	Bundle string    `json:"bundle"`    // ID of bundle this change occured against. Note: The bundle may no longer exist.
+	Amount int       `json:"amount"`    // The value of the bundle at the time the change occured.
+}
+
+type Timestamp time.Time
+
+func (t *Timestamp) MarshalJSON() ([]byte, error) {
+	ts := time.Time(*t).Unix()
+	stamp := fmt.Sprint(ts)
+
+	return []byte(stamp), nil
+}
+
+func (t *Timestamp) UnmarshalJSON(b []byte) error {
+	ts, err := strconv.Atoi(string(b))
+	if err != nil {
+		return err
+	}
+
+	*t = Timestamp(time.Unix(int64(ts), 0))
+
+	return nil
 }
 
 // CreateDomain issues the API to create the given domain.
@@ -108,5 +141,43 @@ func (a *API) FindInfected(filter string) ([]Domain, error) {
 	dst := make([]Domain, 0)
 	url := a.geturl("/v2/infected")
 	err := a.get(url, params, &dst)
+	return dst, err
+}
+
+// ListDomainConfigs fetches the list of all available configuration keys for the
+// given domain.
+func (a *API) ListDomainConfigs(domain int) ([]string, error) {
+	dst := make([]string, 0)
+	url := a.geturl("/v2/domain/%d/config", domain)
+	err := a.get(url, params{}, &dst)
+	return dst, err
+}
+
+// GetDomainConfig fetches the requested domain configuration.
+func (a *API) GetDomainConfig(domain int, key string) (string, error) {
+	url := a.geturl("/v2/domain/%d/config/%s/", domain, key)
+	return a.getTextPlain(url, params{})
+}
+
+// SetDomainConfig sets the domain configuration `key` to the requested value.
+// This method will create the domain configuration if it does not exist yet.
+func (a *API) SetDomainConfig(domain int, key string, value string) (string, error) {
+	url := a.geturl("/v2/domain/%d/config/%s/", domain, key)
+	return a.putTextPlain(url, params{}, value)
+}
+
+// DeleteDomainConfig issues the API to delete the domain configuration with
+// the provided key.
+func (a *API) DeleteDomainConfig(domain int, key string) error {
+	url := a.geturl("/v2/domain/%d/config/%s/", domain, key)
+	return a.delete(url, params{})
+}
+
+// GetDomainBilling gets the billing change log for the given domain. The returned
+// list is sorted by time descending, where up to `limit` items will be returned.
+func (a *API) GetDomainBilling(domain int, limit int) ([]DomainBilling, error) {
+	dst := make([]DomainBilling, 0)
+	url := a.geturl("/v2/domain/%d/billing", domain)
+	err := a.get(url, params{"limit": strconv.Itoa(limit)}, &dst)
 	return dst, err
 }

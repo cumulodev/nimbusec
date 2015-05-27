@@ -107,6 +107,14 @@ func (a *API) DeleteUser(user *User) error {
 	return a.delete(url, params{})
 }
 
+// GetDomainSet fetches the set of allowed domains for an restricted user.
+func (a *API) GetDomainSet(user *User) ([]int, error) {
+	dst := make([]int, 0)
+	url := a.geturl("/v2/user/%d/domains", user.Id)
+	err := a.get(url, params{}, &dst)
+	return dst, err
+}
+
 // UpdateDomainSet updates the set of allowed domains of an restricted user.
 func (a *API) UpdateDomainSet(user *User, domains []int) ([]int, error) {
 	dst := make([]int, 0)
@@ -126,5 +134,34 @@ func (a *API) LinkDomain(user *User, domain int) error {
 // from the user to view the domain.
 func (a *API) UnlinkDomain(user *User, domain int) error {
 	url := a.geturl("/v2/user/%d/domains/%d", user.Id, domain)
+	return a.delete(url, params{})
+}
+
+// ListuserConfigs fetches the list of all available configuration keys for the
+// given domain.
+func (a *API) ListUserConfigs(user int) ([]string, error) {
+	dst := make([]string, 0)
+	url := a.geturl("/v2/user/%d/config", user)
+	err := a.get(url, params{}, &dst)
+	return dst, err
+}
+
+// GetuserConfig fetches the requested user configuration.
+func (a *API) GetUserConfig(user int, key string) (string, error) {
+	url := a.geturl("/v2/user/%d/config/%s/", user, key)
+	return a.getTextPlain(url, params{})
+}
+
+// SetUserConfig sets the user configuration `key` to the requested value.
+// This method will create the user configuration if it does not exist yet.
+func (a *API) SetUserConfig(user int, key string, value string) (string, error) {
+	url := a.geturl("/v2/user/%d/config/%s/", user, key)
+	return a.putTextPlain(url, params{}, value)
+}
+
+// DeleteUserConfig issues the API to delete the user configuration with
+// the provided key.
+func (a *API) DeleteUserConfig(user int, key string) error {
+	url := a.geturl("/v2/user/%d/config/%s/", user, key)
 	return a.delete(url, params{})
 }
