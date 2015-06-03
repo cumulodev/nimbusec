@@ -25,6 +25,16 @@ type User struct {
 	SignatureKey string `json:"signatureKey,omitempty"` // secret for SSO (only used when creating or updating a user)
 }
 
+// Notification represents an notification entry for a user and domain.
+type Notification struct {
+	Id         int    `json:"id,omitempty"` // unique identification of notification
+	Domain     int    `json:"domain"`       // domain for which notifications should be sent
+	Transport  string `json:"transport"`    // transport over which notifications are sent (mail, sms)
+	ServerSide int    `json:"serverside:`   // minimum severity of serverside results before a notification is sent
+	Content    int    `json:"content"`      // minimum severity of content results before a notification is sent
+	Blacklist  int    `json:"blacklist"`    // minimum severity of backlist results before a notification is sent
+}
+
 // CreateUser issues the nimbusec API to create the given user.
 func (a *API) CreateUser(user *User) (*User, error) {
 	dst := new(User)
@@ -146,7 +156,7 @@ func (a *API) ListUserConfigs(user int) ([]string, error) {
 	return dst, err
 }
 
-// GetuserConfig fetches the requested user configuration.
+// GetUserConfig fetches the requested user configuration.
 func (a *API) GetUserConfig(user int, key string) (string, error) {
 	url := a.geturl("/v2/user/%d/config/%s/", user, key)
 	return a.getTextPlain(url, params{})
@@ -163,5 +173,69 @@ func (a *API) SetUserConfig(user int, key string, value string) (string, error) 
 // the provided key.
 func (a *API) DeleteUserConfig(user int, key string) error {
 	url := a.geturl("/v2/user/%d/config/%s/", user, key)
+	return a.delete(url, params{})
+}
+
+// GetNotification fetches a notification by its ID.
+func (a *API) GetNotification(user int, id int) (*Notification, error) {
+	dst := new(Notification)
+	url := a.geturl("/v2/user/%d/notification/%d", user, id)
+	err := a.get(url, params{}, dst)
+	return dst, err
+}
+
+// FindNotifications fetches all notifications for the given user that match the
+// filter criteria.
+func (a *API) FindNotifications(user int, filter string) ([]Notification, error) {
+	params := params{}
+	if filter != EmptyFilter {
+		params["q"] = filter
+	}
+
+	dst := make([]Notification, 0)
+	url := a.geturl("/v2/user/%d/notification", user)
+	err := a.get(url, params, &dst)
+	return dst, err
+}
+
+// CreateNotification creates the notification for the given user.
+func (a *API) CreateNotification(user int, notification *Notification) (*Notification, error) {
+	dst := new(Notification)
+	url := a.geturl("/v2/user/%d", user)
+	err := a.post(url, params{}, notification, dst)
+	return dst, err
+}
+
+// CreateOrUpdateNotification issues the nimbusec API to create the given notification. Instead of
+// failing when attempting to create a duplicate notification, this method will update the
+// remote notification instead.
+func (a *API) CreateOrUpdateNotification(user int, notification *Notification) (*Notification, error) {
+	dst := new(Notification)
+	url := a.geturl("/v2/user/%d", user)
+	err := a.post(url, params{"upsert": "true"}, notification, dst)
+	return dst, err
+}
+
+// CreateOrGetNotifcation issues the nimbusec API to create the given notification. Instead of
+// failing when attempting to create a duplicate notification, this method will fetch the
+// remote notification instead.
+func (a *API) CreateOrGetNotification(user int, notification *Notification) (*Notification, error) {
+	dst := new(Notification)
+	url := a.geturl("/v2/user/%d", user)
+	err := a.post(url, params{"upsert": "false"}, notification, dst)
+	return dst, err
+}
+
+// UpdateNotification updates the notification for the given user.
+func (a *API) UpdateNotification(user int, notification *Notification) (*Notification, error) {
+	dst := new(Notification)
+	url := a.geturl("/v2/user/%d", user)
+	err := a.put(url, params{}, notification, dst)
+	return dst, err
+}
+
+// DeleteNotification deletes the given notification.
+func (a *API) DeleteNotification(user int, notification *Notification) error {
+	url := a.geturl("/v2/user/%d/notification/%d", user, notification.Id)
 	return a.delete(url, params{})
 }
