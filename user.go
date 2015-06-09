@@ -30,7 +30,7 @@ type Notification struct {
 	Id         int    `json:"id,omitempty"` // unique identification of notification
 	Domain     int    `json:"domain"`       // domain for which notifications should be sent
 	Transport  string `json:"transport"`    // transport over which notifications are sent (mail, sms)
-	ServerSide int    `json:"serverside:`   // minimum severity of serverside results before a notification is sent
+	ServerSide int    `json:"serverside"`   // minimum severity of serverside results before a notification is sent
 	Content    int    `json:"content"`      // minimum severity of content results before a notification is sent
 	Blacklist  int    `json:"blacklist"`    // minimum severity of backlist results before a notification is sent
 }
@@ -79,7 +79,7 @@ func (a *API) GetUserByLogin(login string) (*User, error) {
 	}
 
 	if len(users) == 0 {
-		return nil, fmt.Errorf("login %q did not match any users", login)
+		return nil, ErrNotFound
 	}
 
 	if len(users) > 1 {
@@ -201,7 +201,7 @@ func (a *API) FindNotifications(user int, filter string) ([]Notification, error)
 // CreateNotification creates the notification for the given user.
 func (a *API) CreateNotification(user int, notification *Notification) (*Notification, error) {
 	dst := new(Notification)
-	url := a.geturl("/v2/user/%d", user)
+	url := a.geturl("/v2/user/%d/notification", user)
 	err := a.post(url, params{}, notification, dst)
 	return dst, err
 }
@@ -211,7 +211,7 @@ func (a *API) CreateNotification(user int, notification *Notification) (*Notific
 // remote notification instead.
 func (a *API) CreateOrUpdateNotification(user int, notification *Notification) (*Notification, error) {
 	dst := new(Notification)
-	url := a.geturl("/v2/user/%d", user)
+	url := a.geturl("/v2/user/%d/notification", user)
 	err := a.post(url, params{"upsert": "true"}, notification, dst)
 	return dst, err
 }
@@ -221,7 +221,7 @@ func (a *API) CreateOrUpdateNotification(user int, notification *Notification) (
 // remote notification instead.
 func (a *API) CreateOrGetNotification(user int, notification *Notification) (*Notification, error) {
 	dst := new(Notification)
-	url := a.geturl("/v2/user/%d", user)
+	url := a.geturl("/v2/user/%d/notification", user)
 	err := a.post(url, params{"upsert": "false"}, notification, dst)
 	return dst, err
 }
@@ -229,7 +229,7 @@ func (a *API) CreateOrGetNotification(user int, notification *Notification) (*No
 // UpdateNotification updates the notification for the given user.
 func (a *API) UpdateNotification(user int, notification *Notification) (*Notification, error) {
 	dst := new(Notification)
-	url := a.geturl("/v2/user/%d", user)
+	url := a.geturl("/v2/user/%d/notification/%d", user, notification.Id)
 	err := a.put(url, params{}, notification, dst)
 	return dst, err
 }

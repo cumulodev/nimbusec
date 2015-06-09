@@ -19,6 +19,9 @@ const (
 	DefaultAPI = "https://api.nimbusec.com/"
 )
 
+// ErrNotFound is returned by GetXYByName functions if the requested entity can not be found.
+var ErrNotFound = errors.New("not found")
+
 // API represents a client to the nimbusec API.
 type API struct {
 	url    *url.URL
