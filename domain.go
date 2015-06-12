@@ -25,23 +25,28 @@ type DomainBilling struct {
 	Amount int       `json:"amount"`    // The value of the bundle at the time the change occured.
 }
 
+type DomainEvent struct {
+	Time    Timestamp `json:"time"`
+	Event   string    `json:"event"`
+	Human   string    `json:"human"`
+	Machine string    `json:"machine"`
+}
+
 type Timestamp time.Time
 
-func (t *Timestamp) MarshalJSON() ([]byte, error) {
-	ts := time.Time(*t).Unix()
-	stamp := fmt.Sprint(ts)
-
+func (t Timestamp) MarshalJSON() ([]byte, error) {
+	ts := time.Time(t).Unix()
+	stamp := strconv.FormatInt(ts*1000, 10)
 	return []byte(stamp), nil
 }
 
 func (t *Timestamp) UnmarshalJSON(b []byte) error {
-	ts, err := strconv.Atoi(string(b))
+	ts, err := strconv.ParseInt(string(b), 10, 64)
 	if err != nil {
 		return err
 	}
 
-	*t = Timestamp(time.Unix(int64(ts), 0))
-
+	*t = Timestamp(time.Unix(ts/1000, 0))
 	return nil
 }
 
@@ -89,7 +94,7 @@ func (a *API) GetDomainByName(name string) (*Domain, error) {
 	}
 
 	if len(domains) == 0 {
-		return nil, fmt.Errorf("name %q did not match any domains", name)
+		return nil, ErrNotFound
 	}
 
 	if len(domains) > 1 {
@@ -180,4 +185,23 @@ func (a *API) GetDomainBilling(domain int, limit int) ([]DomainBilling, error) {
 	url := a.geturl("/v2/domain/%d/billing", domain)
 	err := a.get(url, params{"limit": strconv.Itoa(limit)}, &dst)
 	return dst, err
+}
+
+func (a *API) GetDomainEvent(domain int, filter string, limit int) ([]DomainEvent, error) {
+	params := params{
+		"limit": strconv.Itoa(limit),
+	}
+	if filter != EmptyFilter {
+		params["q"] = filter
+	}
+
+	dst := make([]DomainEvent, 0)
+	url := a.geturl("/v2/domain/%d/events", domain)
+	err := a.get(url, params, &dst)
+	return dst, err
+}
+
+func (a *API) CreateDomainEvent(domain int, log *DomainEvent) error {
+	url := a.geturl("/v2/domain/%d/events", domain)
+	return a.post(url, params{}, log, nil)
 }
