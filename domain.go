@@ -16,15 +16,6 @@ type Domain struct {
 	FastScans []string `json:"fastScans"`    // Landing pages of the domain scanned
 }
 
-// DomainBilling represents a billing change event. These happen for example when
-// the bundle for a domain changes, or the domain get's disabled or activated.
-type DomainBilling struct {
-	Time   Timestamp `json:"timestamp"` // Time when the change happend.
-	Action string    `json:"action"`    // Type of change, can be either `link` or `unlink`.
-	Bundle string    `json:"bundle"`    // ID of bundle this change occured against. Note: The bundle may no longer exist.
-	Amount int       `json:"amount"`    // The value of the bundle at the time the change occured.
-}
-
 type DomainEvent struct {
 	Time    Timestamp `json:"time"`
 	Event   string    `json:"event"`
@@ -32,10 +23,12 @@ type DomainEvent struct {
 	Machine string    `json:"machine"`
 }
 
-type Timestamp time.Time
+type Timestamp struct {
+	time.Time
+}
 
 func (t Timestamp) MarshalJSON() ([]byte, error) {
-	ts := time.Time(t).Unix()
+	ts := t.Unix()
 	stamp := strconv.FormatInt(ts*1000, 10)
 	return []byte(stamp), nil
 }
@@ -46,7 +39,7 @@ func (t *Timestamp) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	*t = Timestamp(time.Unix(ts/1000, 0))
+	*t = Timestamp{time.Unix(ts/1000, 0)}
 	return nil
 }
 
@@ -176,15 +169,6 @@ func (a *API) SetDomainConfig(domain int, key string, value string) (string, err
 func (a *API) DeleteDomainConfig(domain int, key string) error {
 	url := a.geturl("/v2/domain/%d/config/%s/", domain, key)
 	return a.delete(url, params{})
-}
-
-// GetDomainBilling gets the billing change log for the given domain. The returned
-// list is sorted by time descending, where up to `limit` items will be returned.
-func (a *API) GetDomainBilling(domain int, limit int) ([]DomainBilling, error) {
-	dst := make([]DomainBilling, 0)
-	url := a.geturl("/v2/domain/%d/billing", domain)
-	err := a.get(url, params{"limit": strconv.Itoa(limit)}, &dst)
-	return dst, err
 }
 
 func (a *API) GetDomainEvent(domain int, filter string, limit int) ([]DomainEvent, error) {
