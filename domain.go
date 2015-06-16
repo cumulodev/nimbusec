@@ -1,6 +1,7 @@
 package nimbusec
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"time"
@@ -34,6 +35,10 @@ func (t Timestamp) MarshalJSON() ([]byte, error) {
 }
 
 func (t *Timestamp) UnmarshalJSON(b []byte) error {
+	if bytes.Equal(b, []byte("null")) {
+		return nil
+	}
+
 	ts, err := strconv.ParseInt(string(b), 10, 64)
 	if err != nil {
 		return err
