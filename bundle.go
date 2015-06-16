@@ -1,7 +1,7 @@
 package nimbusec
 
 type Bundle struct {
-	Id         int       `json:"id,omitempty"`
+	Id         string    `json:"id,omitempty"`
 	Name       string    `json:"name"`
 	Start      Timestamp `json:"startDate"`
 	End        Timestamp `json:"endDate"`
