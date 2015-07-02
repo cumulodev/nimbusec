@@ -28,6 +28,24 @@ type Timestamp struct {
 	time.Time
 }
 
+type DomainMetadata struct {
+	LastDeepScan Timestamp `json:"lastDeepScan"` // timestamp (in ms) of last external scan of the whole site
+	NextDeepScan Timestamp `json:"nextDeepScan"` // timestamp (in ms) for next external scan of the whole site
+	LastFastScan Timestamp `json:"lastFastScan"` // timestamp (in ms) of last external scan of the landing pages
+	NextFastScan Timestamp `json:"nextFastScan"` // timestamp (in ms) for next external scan of the landing pages
+	Agent        Timestamp `json:"agent"`        // status of server agent for the given domain
+	Cms          string    `json:"cms"`          // detected CMS vendor and version
+	Httpd        string    `json:"httpd"`        // detected HTTP server vendor and version
+	Php          string    `json:"php"`          // detected PHP version
+	Files        int       `json:"files"`        // number of downloaded files/URLs for last deep scan
+	Size         int       `json:"size"`         // size of downloaded files for last deep scan (in byte)}
+}
+
+type CMSView struct {
+	CMS          string `json:"cpeId"`
+	LatestStable string `json:"latestStable"`
+}
+
 func (t Timestamp) MarshalJSON() ([]byte, error) {
 	ts := t.Unix()
 	stamp := strconv.FormatInt(ts*1000, 10)
@@ -193,4 +211,26 @@ func (a *API) GetDomainEvent(domain int, filter string, limit int) ([]DomainEven
 func (a *API) CreateDomainEvent(domain int, log *DomainEvent) error {
 	url := a.geturl("/v2/domain/%d/events", domain)
 	return a.post(url, params{}, log, nil)
+}
+
+func (a *API) GetDomainMetadata(domain int) (*DomainMetadata, error) {
+	dst := new(DomainMetadata)
+	url := a.geturl("/v2/domain/%d/metadata", domain)
+	err := a.get(url, params{}, &dst)
+	return dst, err
+}
+
+func (a *API) GetDomainCMS(domain int) ([]CMSView, error) {
+	dst := make([]CMSView, 0)
+	url := a.geturl("/v2/domain/%d/cms", domain)
+	err := a.get(url, params{}, &dst)
+	return dst, err
+}
+
+func (a *API) GetCMSName(cpeID string) (string, error) {
+	params := params{
+		"cpeid": cpeID,
+	}
+	url := a.geturl("/v2/cms/name")
+	return a.getTextPlain(url, params)
 }
