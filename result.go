@@ -4,8 +4,8 @@ package nimbusec
 type Result struct {
 	Id           int     `json:"id,omitempty`  // unique identification of a result
 	Status       string  `json:"status"`       // status of the result (pending, acknowledged, falsepositive, removed)
-	Event        string  `json:"status"`       // event type of result (e.g added file)
-	Category     string  `json:"status"`       // category of result
+	Event        string  `json:"event"`        // event type of result (e.g added file)
+	Category     string  `json:"category"`     // category of result
 	Severity     int     `json:"severity"`     // severity level of result (1 = medium to 3 = severe)
 	Probability  float64 `json:"probability`   // probability the result is critical
 	SafeToDelete bool    `json:"safeToDelete"` // flag indicating if the file can be safely deleted without loosing user data
