@@ -34,16 +34,32 @@ type DomainMetadata struct {
 	LastFastScan Timestamp `json:"lastFastScan"` // timestamp (in ms) of last external scan of the landing pages
 	NextFastScan Timestamp `json:"nextFastScan"` // timestamp (in ms) for next external scan of the landing pages
 	Agent        Timestamp `json:"agent"`        // status of server agent for the given domain
-	Cms          string    `json:"cms"`          // detected CMS vendor and version
-	Httpd        string    `json:"httpd"`        // detected HTTP server vendor and version
-	Php          string    `json:"php"`          // detected PHP version
 	Files        int       `json:"files"`        // number of downloaded files/URLs for last deep scan
 	Size         int       `json:"size"`         // size of downloaded files for last deep scan (in byte)}
 }
 
-type CMSView struct {
-	CMS          string `json:"cpeId"`
-	LatestStable string `json:"latestStable"`
+type DomainApplication struct {
+	Name       string `json:"name"`
+	Version    string `json:"version"`
+	Path       string `json:"path"`
+	Category   string `json:"category"`
+	Source     string `json:"source"`
+	Latest     bool   `json:"latest"`
+	Vulnerable bool   `json:"vulnerable"`
+}
+
+type Screenshot struct {
+	Target   string `json:"target"`
+	Previous struct {
+		Date     Timestamp `json:"date"`
+		MimeType string    `json:"mime"`
+		URL      string    `json:"url"`
+	} `json:"previous"`
+	Current struct {
+		Date     Timestamp `json:"date"`
+		MimeType string    `json:"mime"`
+		URL      string    `json:"url"`
+	} `json:"current"`
 }
 
 func (t Timestamp) MarshalJSON() ([]byte, error) {
@@ -220,17 +236,21 @@ func (a *API) GetDomainMetadata(domain int) (*DomainMetadata, error) {
 	return dst, err
 }
 
-func (a *API) GetDomainCMS(domain int) ([]CMSView, error) {
-	dst := make([]CMSView, 0)
-	url := a.geturl("/v2/domain/%d/cms", domain)
+func (a *API) GetDomainApplications(domain int) ([]DomainApplication, error) {
+	dst := make([]DomainApplication, 0)
+	url := a.geturl("/v2/domain/%d/applications", domain)
 	err := a.get(url, params{}, &dst)
 	return dst, err
 }
 
-func (a *API) GetCMSName(cpeID string) (string, error) {
-	params := params{
-		"cpeid": cpeID,
-	}
-	url := a.geturl("/v2/cms/name")
-	return a.getTextPlain(url, params)
+func (a *API) GetDomainScreenshot(domain int) (*Screenshot, error) {
+	dst := new(Screenshot)
+	url := a.geturl("/v2/domain/%d/screenshot", domain)
+	err := a.get(url, params{}, &dst)
+	return dst, err
+}
+
+func (a *API) GetImage(url string) ([]byte, error) {
+	resolved := a.geturl(url)
+	return a.getBytes(resolved, params{})
 }

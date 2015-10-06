@@ -167,14 +167,7 @@ func (a *API) delete(url string, params params) error {
 
 // getTextPlain is a helper for all GET request with plain text payload.
 func (a *API) getTextPlain(url string, params params) (string, error) {
-	resp, err := try(a.client.Get(url, params, a.token))
-	if err != nil {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := a.getBytes(url, params)
 	if err != nil {
 		return "", err
 	}
@@ -197,4 +190,20 @@ func (a *API) putTextPlain(url string, params params, payload string) (string, e
 	}
 
 	return string(data), nil
+}
+
+// getBytes is a helper for all GET request with raw byte payload.
+func (a *API) getBytes(url string, params params) ([]byte, error) {
+	resp, err := try(a.client.Get(url, params, a.token))
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
