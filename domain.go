@@ -244,8 +244,12 @@ func (a *API) GetDomainApplications(domain int) ([]DomainApplication, error) {
 }
 
 func (a *API) GetDomainScreenshot(domain int) (*Screenshot, error) {
+	return a.GetSpecificDomainScreenshot(domain, "EU", "desktop")
+}
+
+func (a *API) GetSpecificDomainScreenshot(domain int, region, viewport string) (*Screenshot, error) {
 	dst := new(Screenshot)
-	url := a.geturl("/v2/domain/%d/screenshot", domain)
+	url := a.geturl("/v2/domain/%d/screenshot/%s/%s", domain, region, viewport)
 	err := a.get(url, params{}, &dst)
 	return dst, err
 }
