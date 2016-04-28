@@ -46,3 +46,12 @@ func (a *API) FindResults(domain int, filter string) ([]Result, error) {
 	err := a.get(url, params, &dst)
 	return dst, err
 }
+
+// UpdateResult issues the nimbusec API to update a result, all fields except
+// status will be ignored.
+func (a *API) UpdateResult(domain int, result *Result) (*Result, error) {
+	dst := new(Result)
+	url := a.geturl("/v2/domain/%d/result/%d", domain, result.Id)
+	err := a.put(url, params{}, result, dst)
+	return dst, err
+}
