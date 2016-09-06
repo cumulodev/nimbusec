@@ -48,6 +48,14 @@ type DomainApplication struct {
 	Vulnerable bool   `json:"vulnerable"`
 }
 
+type DomainIssues struct {
+	DomainID int    `json:"domainId,omitempty"`
+	Category string `json:"category"`
+	Issues   int    `json:"issues"`
+	Severity int    `json:"severity"`
+	Src      string `json:"src"`
+}
+
 type Screenshot struct {
 	Target   string `json:"target"`
 	Previous struct {
@@ -257,4 +265,11 @@ func (a *API) GetSpecificDomainScreenshot(domain int, region, viewport string) (
 func (a *API) GetImage(url string) ([]byte, error) {
 	resolved := a.geturl(url)
 	return a.getBytes(resolved, params{})
+}
+
+func (a *API) GetIssues() ([]DomainIssues, error) {
+	dst := make([]DomainIssues, 0)
+	url := a.geturl("/v2/domainissues")
+	err := a.get(url, params{}, &dst)
+	return dst, err
 }
