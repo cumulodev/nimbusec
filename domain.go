@@ -93,8 +93,8 @@ func (t *Timestamp) UnmarshalJSON(b []byte) error {
 // CreateDomain issues the API to create the given domain.
 func (a *API) CreateDomain(domain *Domain) (*Domain, error) {
 	dst := new(Domain)
-	url := a.geturl("/v2/domain")
-	err := a.post(url, params{}, domain, dst)
+	url := a.BuildURL("/v2/domain")
+	err := a.Post(url, Params{}, domain, dst)
 	return dst, err
 }
 
@@ -103,8 +103,8 @@ func (a *API) CreateDomain(domain *Domain) (*Domain, error) {
 // the remote domain instead.
 func (a *API) CreateOrUpdateDomain(domain *Domain) (*Domain, error) {
 	dst := new(Domain)
-	url := a.geturl("/v2/domain")
-	err := a.post(url, params{"upsert": "true"}, domain, dst)
+	url := a.BuildURL("/v2/domain")
+	err := a.Post(url, Params{"upsert": "true"}, domain, dst)
 	return dst, err
 }
 
@@ -113,16 +113,16 @@ func (a *API) CreateOrUpdateDomain(domain *Domain) (*Domain, error) {
 // the remote domain instead.
 func (a *API) CreateOrGetDomain(domain *Domain) (*Domain, error) {
 	dst := new(Domain)
-	url := a.geturl("/v2/domain")
-	err := a.post(url, params{"upsert": "false"}, domain, dst)
+	url := a.BuildURL("/v2/domain")
+	err := a.Post(url, Params{"upsert": "false"}, domain, dst)
 	return dst, err
 }
 
 // GetDomain retrieves a domain from the API by its ID.
 func (a *API) GetDomain(domain int) (*Domain, error) {
 	dst := new(Domain)
-	url := a.geturl("/v2/domain/%d", domain)
-	err := a.get(url, params{}, dst)
+	url := a.BuildURL("/v2/domain/%d", domain)
+	err := a.Get(url, Params{}, dst)
 	return dst, err
 }
 
@@ -146,22 +146,22 @@ func (a *API) GetDomainByName(name string) (*Domain, error) {
 
 // FindDomains searches for domains that match the given filter criteria.
 func (a *API) FindDomains(filter string) ([]Domain, error) {
-	params := params{}
+	params := Params{}
 	if filter != EmptyFilter {
 		params["q"] = filter
 	}
 
 	dst := make([]Domain, 0)
-	url := a.geturl("/v2/domain")
-	err := a.get(url, params, &dst)
+	url := a.BuildURL("/v2/domain")
+	err := a.Get(url, params, &dst)
 	return dst, err
 }
 
 // UpdateDOmain issues the nimbusec API to update a domain.
 func (a *API) UpdateDomain(domain *Domain) (*Domain, error) {
 	dst := new(Domain)
-	url := a.geturl("/v2/domain/%d", domain.Id)
-	err := a.put(url, params{}, domain, dst)
+	url := a.BuildURL("/v2/domain/%d", domain.Id)
+	err := a.Put(url, Params{}, domain, dst)
 	return dst, err
 }
 
@@ -169,8 +169,8 @@ func (a *API) UpdateDomain(domain *Domain) (*Domain, error) {
 // all assiciated data will only be marked as deleted, whereas with clean=true the data
 // will also be removed from the nimbusec system.
 func (a *API) DeleteDomain(d *Domain, clean bool) error {
-	url := a.geturl("/v2/domain/%d", d.Id)
-	return a.delete(url, params{
+	url := a.BuildURL("/v2/domain/%d", d.Id)
+	return a.Delete(url, Params{
 		"pleaseremovealldata": fmt.Sprintf("%t", clean),
 	})
 }
@@ -184,8 +184,8 @@ func (a *API) FindInfected(filter string) ([]Domain, error) {
 	}
 
 	dst := make([]Domain, 0)
-	url := a.geturl("/v2/infected")
-	err := a.get(url, params, &dst)
+	url := a.BuildURL("/v2/infected")
+	err := a.Get(url, params, &dst)
 	return dst, err
 }
 
@@ -193,33 +193,33 @@ func (a *API) FindInfected(filter string) ([]Domain, error) {
 // given domain.
 func (a *API) ListDomainConfigs(domain int) ([]string, error) {
 	dst := make([]string, 0)
-	url := a.geturl("/v2/domain/%d/config", domain)
-	err := a.get(url, params{}, &dst)
+	url := a.BuildURL("/v2/domain/%d/config", domain)
+	err := a.Get(url, Params{}, &dst)
 	return dst, err
 }
 
 // GetDomainConfig fetches the requested domain configuration.
 func (a *API) GetDomainConfig(domain int, key string) (string, error) {
-	url := a.geturl("/v2/domain/%d/config/%s/", domain, key)
-	return a.getTextPlain(url, params{})
+	url := a.BuildURL("/v2/domain/%d/config/%s/", domain, key)
+	return a.getTextPlain(url, Params{})
 }
 
 // SetDomainConfig sets the domain configuration `key` to the requested value.
 // This method will create the domain configuration if it does not exist yet.
 func (a *API) SetDomainConfig(domain int, key string, value string) (string, error) {
-	url := a.geturl("/v2/domain/%d/config/%s/", domain, key)
-	return a.putTextPlain(url, params{}, value)
+	url := a.BuildURL("/v2/domain/%d/config/%s/", domain, key)
+	return a.putTextPlain(url, Params{}, value)
 }
 
 // DeleteDomainConfig issues the API to delete the domain configuration with
 // the provided key.
 func (a *API) DeleteDomainConfig(domain int, key string) error {
-	url := a.geturl("/v2/domain/%d/config/%s/", domain, key)
-	return a.delete(url, params{})
+	url := a.BuildURL("/v2/domain/%d/config/%s/", domain, key)
+	return a.Delete(url, Params{})
 }
 
 func (a *API) GetDomainEvent(domain int, filter string, limit int) ([]DomainEvent, error) {
-	params := params{
+	params := Params{
 		"limit": strconv.Itoa(limit),
 	}
 	if filter != EmptyFilter {
@@ -227,27 +227,27 @@ func (a *API) GetDomainEvent(domain int, filter string, limit int) ([]DomainEven
 	}
 
 	dst := make([]DomainEvent, 0)
-	url := a.geturl("/v2/domain/%d/events", domain)
-	err := a.get(url, params, &dst)
+	url := a.BuildURL("/v2/domain/%d/events", domain)
+	err := a.Get(url, params, &dst)
 	return dst, err
 }
 
 func (a *API) CreateDomainEvent(domain int, log *DomainEvent) error {
-	url := a.geturl("/v2/domain/%d/events", domain)
-	return a.post(url, params{}, log, nil)
+	url := a.BuildURL("/v2/domain/%d/events", domain)
+	return a.Post(url, Params{}, log, nil)
 }
 
 func (a *API) GetDomainMetadata(domain int) (*DomainMetadata, error) {
 	dst := new(DomainMetadata)
-	url := a.geturl("/v2/domain/%d/metadata", domain)
-	err := a.get(url, params{}, &dst)
+	url := a.BuildURL("/v2/domain/%d/metadata", domain)
+	err := a.Get(url, Params{}, &dst)
 	return dst, err
 }
 
 func (a *API) GetDomainApplications(domain int) ([]DomainApplication, error) {
 	dst := make([]DomainApplication, 0)
-	url := a.geturl("/v2/domain/%d/applications", domain)
-	err := a.get(url, params{}, &dst)
+	url := a.BuildURL("/v2/domain/%d/applications", domain)
+	err := a.Get(url, Params{}, &dst)
 	return dst, err
 }
 
@@ -257,19 +257,19 @@ func (a *API) GetDomainScreenshot(domain int) (*Screenshot, error) {
 
 func (a *API) GetSpecificDomainScreenshot(domain int, region, viewport string) (*Screenshot, error) {
 	dst := new(Screenshot)
-	url := a.geturl("/v2/domain/%d/screenshot/%s/%s", domain, region, viewport)
-	err := a.get(url, params{}, &dst)
+	url := a.BuildURL("/v2/domain/%d/screenshot/%s/%s", domain, region, viewport)
+	err := a.Get(url, Params{}, &dst)
 	return dst, err
 }
 
 func (a *API) GetImage(url string) ([]byte, error) {
-	resolved := a.geturl(url)
-	return a.getBytes(resolved, params{})
+	resolved := a.BuildURL(url)
+	return a.getBytes(resolved, Params{})
 }
 
 func (a *API) GetIssues() ([]DomainIssues, error) {
 	dst := make([]DomainIssues, 0)
-	url := a.geturl("/v2/domainissues")
-	err := a.get(url, params{}, &dst)
+	url := a.BuildURL("/v2/domainissues")
+	err := a.Get(url, Params{}, &dst)
 	return dst, err
 }

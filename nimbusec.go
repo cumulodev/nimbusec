@@ -29,6 +29,9 @@ type API struct {
 	token  *oauth.AccessToken
 }
 
+// Params is an convenience alias for URL query values as used with OAuth.
+type Params map[string]string
+
 // NewAPI creates a new nimbusec API client.
 func NewAPI(rawurl, key, secret string) (*API, error) {
 	client := oauth.NewConsumer(key, secret, oauth.ServiceProvider{})
@@ -46,8 +49,8 @@ func NewAPI(rawurl, key, secret string) (*API, error) {
 	}, nil
 }
 
-// geturl builds the fully qualified url to the nimbusec API.
-func (a *API) geturl(relpath string, args ...interface{}) string {
+// BuildURL builds the fully qualified url to the nimbusec API.
+func (a *API) BuildURL(relpath string, args ...interface{}) string {
 	if url, err := a.url.Parse(fmt.Sprintf(relpath, args...)); err == nil {
 		return url.String()
 	}
@@ -74,10 +77,8 @@ func try(resp *http.Response, err error) (*http.Response, error) {
 	return resp, err
 }
 
-type params map[string]string
-
-// get is a helper for all GET request with json payload.
-func (a *API) get(url string, params params, dst interface{}) error {
+// Get is a helper for all GET request with json payload.
+func (a *API) Get(url string, params Params, dst interface{}) error {
 	resp, err := try(a.client.Get(url, params, a.token))
 	if err != nil {
 		return err
@@ -100,8 +101,8 @@ func (a *API) get(url string, params params, dst interface{}) error {
 	return nil
 }
 
-// post is a helper for all POST request with json payload.
-func (a *API) post(url string, params params, src interface{}, dst interface{}) error {
+// Post is a helper for all POST request with json payload.
+func (a *API) Post(url string, params Params, src interface{}, dst interface{}) error {
 	payload, err := json.Marshal(src)
 	if err != nil {
 		return err
@@ -129,8 +130,8 @@ func (a *API) post(url string, params params, src interface{}, dst interface{}) 
 	return nil
 }
 
-// put is a helper for all PUT request with json payload.
-func (a *API) put(url string, params params, src interface{}, dst interface{}) error {
+// Put is a helper for all PUT request with json payload.
+func (a *API) Put(url string, params Params, src interface{}, dst interface{}) error {
 	payload, err := json.Marshal(src)
 	if err != nil {
 		return err
@@ -158,15 +159,15 @@ func (a *API) put(url string, params params, src interface{}, dst interface{}) e
 	return nil
 }
 
-// delete is a helper for all DELETE request with json payload.
-func (a *API) delete(url string, params params) error {
+// Delete is a helper for all DELETE request with json payload.
+func (a *API) Delete(url string, params Params) error {
 	resp, err := a.client.Delete(url, params, a.token)
 	resp.Body.Close()
 	return err
 }
 
 // getTextPlain is a helper for all GET request with plain text payload.
-func (a *API) getTextPlain(url string, params params) (string, error) {
+func (a *API) getTextPlain(url string, params Params) (string, error) {
 	data, err := a.getBytes(url, params)
 	if err != nil {
 		return "", err
@@ -176,7 +177,7 @@ func (a *API) getTextPlain(url string, params params) (string, error) {
 }
 
 // putTextPlain is a helper for all PUT request with plain text payload.
-func (a *API) putTextPlain(url string, params params, payload string) (string, error) {
+func (a *API) putTextPlain(url string, params Params, payload string) (string, error) {
 	resp, err := try(a.client.Put(url, "text/plain", string(payload), params, a.token))
 	if err != nil {
 		return "", err
@@ -193,7 +194,7 @@ func (a *API) putTextPlain(url string, params params, payload string) (string, e
 }
 
 // getBytes is a helper for all GET request with raw byte payload.
-func (a *API) getBytes(url string, params params) ([]byte, error) {
+func (a *API) getBytes(url string, params Params) ([]byte, error) {
 	resp, err := try(a.client.Get(url, params, a.token))
 	if err != nil {
 		return nil, err

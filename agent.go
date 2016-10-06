@@ -13,8 +13,8 @@ type Agent struct {
 }
 
 func (a *API) DownloadAgent(agent Agent) ([]byte, error) {
-	url := a.geturl("/v2/agent/download/nimbusagent-%s-%s-v%d.%s", agent.OS, agent.Arch, agent.Version, agent.Format)
-	res, err := a.client.Get(url, params{}, a.token)
+	url := a.BuildURL("/v2/agent/download/nimbusagent-%s-%s-v%d.%s", agent.OS, agent.Arch, agent.Version, agent.Format)
+	res, err := a.client.Get(url, Params{}, a.token)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -25,13 +25,13 @@ func (a *API) DownloadAgent(agent Agent) ([]byte, error) {
 }
 
 func (a *API) FindAgents(filter string) ([]Agent, error) {
-	params := params{}
+	params := Params{}
 	if filter != EmptyFilter {
 		params["q"] = filter
 	}
 
 	dst := make([]Agent, 0)
-	url := a.geturl("/v2/agent/download")
-	err := a.get(url, params, &dst)
+	url := a.BuildURL("/v2/agent/download")
+	err := a.Get(url, params, &dst)
 	return dst, err
 }

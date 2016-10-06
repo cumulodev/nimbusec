@@ -29,8 +29,8 @@ type Result struct {
 // GetResult fetches a result by its ID.
 func (a *API) GetResult(domain, result int) (*Result, error) {
 	dst := new(Result)
-	url := a.geturl("/v2/domain/%d/result/%d", domain, result)
-	err := a.get(url, params{}, dst)
+	url := a.BuildURL("/v2/domain/%d/result/%d", domain, result)
+	err := a.Get(url, Params{}, dst)
 	return dst, err
 }
 
@@ -42,8 +42,8 @@ func (a *API) FindResults(domain int, filter string) ([]Result, error) {
 	}
 
 	dst := make([]Result, 0)
-	url := a.geturl("/v2/domain/%d/result", domain)
-	err := a.get(url, params, &dst)
+	url := a.BuildURL("/v2/domain/%d/result", domain)
+	err := a.Get(url, params, &dst)
 	return dst, err
 }
 
@@ -51,7 +51,7 @@ func (a *API) FindResults(domain int, filter string) ([]Result, error) {
 // status will be ignored.
 func (a *API) UpdateResult(domain int, result *Result) (*Result, error) {
 	dst := new(Result)
-	url := a.geturl("/v2/domain/%d/result/%d", domain, result.Id)
-	err := a.put(url, params{}, result, dst)
+	url := a.BuildURL("/v2/domain/%d/result/%d", domain, result.Id)
+	err := a.Put(url, Params{}, result, dst)
 	return dst, err
 }

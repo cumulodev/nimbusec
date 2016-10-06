@@ -38,8 +38,8 @@ type Notification struct {
 // CreateUser issues the nimbusec API to create the given user.
 func (a *API) CreateUser(user *User) (*User, error) {
 	dst := new(User)
-	url := a.geturl("/v2/user")
-	err := a.post(url, params{}, user, dst)
+	url := a.BuildURL("/v2/user")
+	err := a.Post(url, Params{}, user, dst)
 	return dst, err
 }
 
@@ -48,8 +48,8 @@ func (a *API) CreateUser(user *User) (*User, error) {
 // remote user instead.
 func (a *API) CreateOrUpdateUser(user *User) (*User, error) {
 	dst := new(User)
-	url := a.geturl("/v2/user")
-	err := a.post(url, params{"upsert": "true"}, user, dst)
+	url := a.BuildURL("/v2/user")
+	err := a.Post(url, Params{"upsert": "true"}, user, dst)
 	return dst, err
 }
 
@@ -58,16 +58,16 @@ func (a *API) CreateOrUpdateUser(user *User) (*User, error) {
 // remote user instead.
 func (a *API) CreateOrGetUser(user *User) (*User, error) {
 	dst := new(User)
-	url := a.geturl("/v2/user")
-	err := a.post(url, params{"upsert": "false"}, user, dst)
+	url := a.BuildURL("/v2/user")
+	err := a.Post(url, Params{"upsert": "false"}, user, dst)
 	return dst, err
 }
 
 // GetUser fetches an user by its ID.
 func (a *API) GetUser(user int) (*User, error) {
 	dst := new(User)
-	url := a.geturl("/v2/user/%d", user)
-	err := a.get(url, params{}, dst)
+	url := a.BuildURL("/v2/user/%d", user)
+	err := a.Get(url, Params{}, dst)
 	return dst, err
 }
 
@@ -91,118 +91,118 @@ func (a *API) GetUserByLogin(login string) (*User, error) {
 
 // FindUsers searches for users that match the given filter criteria.
 func (a *API) FindUsers(filter string) ([]User, error) {
-	params := params{}
+	params := Params{}
 	if filter != EmptyFilter {
 		params["q"] = filter
 	}
 
 	dst := make([]User, 0)
-	url := a.geturl("/v2/user")
-	err := a.get(url, params, &dst)
+	url := a.BuildURL("/v2/user")
+	err := a.Get(url, params, &dst)
 	return dst, err
 }
 
 // UpdateUser issues the nimbusec API to update an user.
 func (a *API) UpdateUser(user *User) (*User, error) {
 	dst := new(User)
-	url := a.geturl("/v2/user/%d", user.Id)
-	err := a.put(url, params{}, user, dst)
+	url := a.BuildURL("/v2/user/%d", user.Id)
+	err := a.Put(url, Params{}, user, dst)
 	return dst, err
 }
 
 // DeleteUser issues the nimbusec API to delete an user. The root user or tennant
 // can not be deleted via this method.
 func (a *API) DeleteUser(user *User) error {
-	url := a.geturl("/v2/user/%d", user.Id)
-	return a.delete(url, params{})
+	url := a.BuildURL("/v2/user/%d", user.Id)
+	return a.Delete(url, Params{})
 }
 
 // GetDomainSet fetches the set of allowed domains for an restricted user.
 func (a *API) GetDomainSet(user *User) ([]int, error) {
 	dst := make([]int, 0)
-	url := a.geturl("/v2/user/%d/domains", user.Id)
-	err := a.get(url, params{}, &dst)
+	url := a.BuildURL("/v2/user/%d/domains", user.Id)
+	err := a.Get(url, Params{}, &dst)
 	return dst, err
 }
 
 // UpdateDomainSet updates the set of allowed domains of an restricted user.
 func (a *API) UpdateDomainSet(user *User, domains []int) ([]int, error) {
 	dst := make([]int, 0)
-	url := a.geturl("/v2/user/%d/domains", user.Id)
-	err := a.put(url, params{}, domains, &dst)
+	url := a.BuildURL("/v2/user/%d/domains", user.Id)
+	err := a.Put(url, Params{}, domains, &dst)
 	return dst, err
 }
 
 // LinkDomain links the given domain id to the given user and adds the priviledges for
 // the user to view the domain.
 func (a *API) LinkDomain(user *User, domain int) error {
-	url := a.geturl("/v2/user/%d/domains", user.Id)
-	return a.post(url, params{}, domain, nil)
+	url := a.BuildURL("/v2/user/%d/domains", user.Id)
+	return a.Post(url, Params{}, domain, nil)
 }
 
 // UnlinkDomain unlinks the given domain id to the given user and removes the priviledges
 // from the user to view the domain.
 func (a *API) UnlinkDomain(user *User, domain int) error {
-	url := a.geturl("/v2/user/%d/domains/%d", user.Id, domain)
-	return a.delete(url, params{})
+	url := a.BuildURL("/v2/user/%d/domains/%d", user.Id, domain)
+	return a.Delete(url, Params{})
 }
 
 // ListuserConfigs fetches the list of all available configuration keys for the
 // given domain.
 func (a *API) ListUserConfigs(user int) ([]string, error) {
 	dst := make([]string, 0)
-	url := a.geturl("/v2/user/%d/config", user)
-	err := a.get(url, params{}, &dst)
+	url := a.BuildURL("/v2/user/%d/config", user)
+	err := a.Get(url, Params{}, &dst)
 	return dst, err
 }
 
 // GetUserConfig fetches the requested user configuration.
 func (a *API) GetUserConfig(user int, key string) (string, error) {
-	url := a.geturl("/v2/user/%d/config/%s/", user, key)
-	return a.getTextPlain(url, params{})
+	url := a.BuildURL("/v2/user/%d/config/%s/", user, key)
+	return a.getTextPlain(url, Params{})
 }
 
 // SetUserConfig sets the user configuration `key` to the requested value.
 // This method will create the user configuration if it does not exist yet.
 func (a *API) SetUserConfig(user int, key string, value string) (string, error) {
-	url := a.geturl("/v2/user/%d/config/%s/", user, key)
-	return a.putTextPlain(url, params{}, value)
+	url := a.BuildURL("/v2/user/%d/config/%s/", user, key)
+	return a.putTextPlain(url, Params{}, value)
 }
 
 // DeleteUserConfig issues the API to delete the user configuration with
 // the provided key.
 func (a *API) DeleteUserConfig(user int, key string) error {
-	url := a.geturl("/v2/user/%d/config/%s/", user, key)
-	return a.delete(url, params{})
+	url := a.BuildURL("/v2/user/%d/config/%s/", user, key)
+	return a.Delete(url, Params{})
 }
 
 // GetNotification fetches a notification by its ID.
 func (a *API) GetNotification(user int, id int) (*Notification, error) {
 	dst := new(Notification)
-	url := a.geturl("/v2/user/%d/notification/%d", user, id)
-	err := a.get(url, params{}, dst)
+	url := a.BuildURL("/v2/user/%d/notification/%d", user, id)
+	err := a.Get(url, Params{}, dst)
 	return dst, err
 }
 
 // FindNotifications fetches all notifications for the given user that match the
 // filter criteria.
 func (a *API) FindNotifications(user int, filter string) ([]Notification, error) {
-	params := params{}
+	params := Params{}
 	if filter != EmptyFilter {
 		params["q"] = filter
 	}
 
 	dst := make([]Notification, 0)
-	url := a.geturl("/v2/user/%d/notification", user)
-	err := a.get(url, params, &dst)
+	url := a.BuildURL("/v2/user/%d/notification", user)
+	err := a.Get(url, params, &dst)
 	return dst, err
 }
 
 // CreateNotification creates the notification for the given user.
 func (a *API) CreateNotification(user int, notification *Notification) (*Notification, error) {
 	dst := new(Notification)
-	url := a.geturl("/v2/user/%d/notification", user)
-	err := a.post(url, params{}, notification, dst)
+	url := a.BuildURL("/v2/user/%d/notification", user)
+	err := a.Post(url, Params{}, notification, dst)
 	return dst, err
 }
 
@@ -211,8 +211,8 @@ func (a *API) CreateNotification(user int, notification *Notification) (*Notific
 // remote notification instead.
 func (a *API) CreateOrUpdateNotification(user int, notification *Notification) (*Notification, error) {
 	dst := new(Notification)
-	url := a.geturl("/v2/user/%d/notification", user)
-	err := a.post(url, params{"upsert": "true"}, notification, dst)
+	url := a.BuildURL("/v2/user/%d/notification", user)
+	err := a.Post(url, Params{"upsert": "true"}, notification, dst)
 	return dst, err
 }
 
@@ -221,21 +221,21 @@ func (a *API) CreateOrUpdateNotification(user int, notification *Notification) (
 // remote notification instead.
 func (a *API) CreateOrGetNotification(user int, notification *Notification) (*Notification, error) {
 	dst := new(Notification)
-	url := a.geturl("/v2/user/%d/notification", user)
-	err := a.post(url, params{"upsert": "false"}, notification, dst)
+	url := a.BuildURL("/v2/user/%d/notification", user)
+	err := a.Post(url, Params{"upsert": "false"}, notification, dst)
 	return dst, err
 }
 
 // UpdateNotification updates the notification for the given user.
 func (a *API) UpdateNotification(user int, notification *Notification) (*Notification, error) {
 	dst := new(Notification)
-	url := a.geturl("/v2/user/%d/notification/%d", user, notification.Id)
-	err := a.put(url, params{}, notification, dst)
+	url := a.BuildURL("/v2/user/%d/notification/%d", user, notification.Id)
+	err := a.Put(url, Params{}, notification, dst)
 	return dst, err
 }
 
 // DeleteNotification deletes the given notification.
 func (a *API) DeleteNotification(user int, notification *Notification) error {
-	url := a.geturl("/v2/user/%d/notification/%d", user, notification.Id)
-	return a.delete(url, params{})
+	url := a.BuildURL("/v2/user/%d/notification/%d", user, notification.Id)
+	return a.Delete(url, Params{})
 }

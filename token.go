@@ -13,28 +13,28 @@ type Token struct {
 // CreateToken issues the nimbusec API to create a new agent token.
 func (a *API) CreateToken(token *Token) (*Token, error) {
 	dst := new(Token)
-	url := a.geturl("/v2/agent/token")
-	err := a.post(url, params{}, token, dst)
+	url := a.BuildURL("/v2/agent/token")
+	err := a.Post(url, Params{}, token, dst)
 	return dst, err
 }
 
 // GetToken fetches a token by its ID.
 func (a *API) GetToken(token int) (*Token, error) {
 	dst := new(Token)
-	url := a.geturl("/v2/agent/token/%d", token)
-	err := a.get(url, params{}, dst)
+	url := a.BuildURL("/v2/agent/token/%d", token)
+	err := a.Get(url, Params{}, dst)
 	return dst, err
 }
 
 // FindTOkens searches for tokens that match the given filter criteria.
 func (a *API) FindTokens(filter string) ([]Token, error) {
-	params := params{}
+	params := Params{}
 	if filter != EmptyFilter {
 		params["q"] = filter
 	}
 
 	dst := make([]Token, 0)
-	url := a.geturl("/v2/agent/token")
-	err := a.get(url, params, &dst)
+	url := a.BuildURL("/v2/agent/token")
+	err := a.Get(url, params, &dst)
 	return dst, err
 }
